@@ -1,0 +1,177 @@
+```{r}
+googledrive::drive_deauth()
+googledrive::drive_download(googledrive::as_id("https://docs.google.com/spreadsheets/d/1lkts4hLkrAFAobONFXiEjgDnuUmXKci6YF--vg1pC1s/edit#gid=1034803737"))
+
+Exercise_Data <- readxl::read_excel(
+  "Exercise Data.xlsx",
+  sheet = "Sheet10",
+  col_types = c("numeric", "numeric", "numeric", "numeric")
+  )
+
+Exercise_Data |> purrr::map(class)
+```
+
+
+```{r}
+tidyr::pivot_longer(
+  data = Exercise_Data,
+  cols = 2:4,
+  names_to = "country",
+  values_to = "lifeExpectancy"
+) -> Exercise_Data_longer
+```
+
+```{r}
+plot <- Plot(Exercise_Data_longer)
+plot$ggplot <- ggplot(data=plot$data)
+plot$theme= list(
+  theme(
+    axis.line.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.major.y = element_line(
+      color="#c4d1d7")
+    )
+  )
+plot$geom=list(
+  geom_bin_2d(
+    mapping=aes(
+      x=year,
+      y=country,
+      fill=lifeExpectancy
+    ),
+    binwidth = 0.5
+  )
+)
+
+plot$ggplot+plot$theme+plot$geom+coord_flip()
+```
+
+
+##老師
+```{r}
+library(dplyr)
+Exercise_Data |>
+  tidyr::pivot_longer(
+    cols=2:4,
+    names_to = "country",
+    values_to = "lifeExpChange"
+    ) |> 
+  mutate(
+    y = dplyr::case_when(
+      country == "country A" ~ 0.5,
+      country == "country B" ~ 1.5,
+      country == "country C" ~ 2.5
+      )
+    ) -> Exercise_Data_long
+head(Exercise_Data_long)
+```
+
+
+```{r}
+# base plot
+plt=Plot(Exercise_Data_long)
+plt$ggplot = ggplot(data=plt$data)
+plt$geoms = list(
+  geom_tile(
+    aes(
+      x=year,
+      y=country,
+      fill=lifeExpChange
+      ),
+    width=1,
+    height=1
+    )
+  )
+
+# in ggplot, categorical values are treated as integer starting from 1
+# to cover country A, B, C, ymin and ymax must cover 1, 2, 3
+# to cover country C, ymin and ymax must cover 3
+plt$annotation = list(
+  geom_rect(
+    data=data.frame(
+      xmin=c(1971, 2001)-0.5,
+      xmax=c(1978, 2004)+0.5,
+      ymin=c(0.5, 2.5),
+      ymax=c(3.5, 3.5)
+      ),
+    mapping=aes(
+      xmin=xmin,
+      xmax=xmax,
+      ymin=ymin,
+      ymax=ymax
+      ),
+    fill="transparent",
+    linetype="solid",
+    color="black"
+    )
+  )
+
+plt$make()
+```
+
+```{r}
+# rename fill variable, and define na value color
+plt$scale = scale_fill_continuous(
+  name="Changes in Life Expectancy",
+  na.value = "transparent"
+  )
+plt$others = list(
+  # expand makes axis touch down; limits defines the sequence of presentation as levels can do
+  scale_y_discrete(
+    expand=c(0,0),
+    position="right",
+    limits=c(
+      "country C",
+      "country B",
+      "country A")
+    ),
+  # breaks defines what should show on the axis
+  scale_x_continuous(
+    expand=c(0,0),
+    breaks = seq(1960,2020, by=10)
+    ),
+  theme(
+    legend.position="top",
+    axis.line.y=element_blank(),
+    axis.ticks.y=element_blank()
+    ),
+  # no labels in x and y axes
+  xlab(NULL),
+  ylab(NULL)
+)
+# Due to the new sequence of country presentation, we need to change ymin and ymax setting
+plt$annotation = list(
+  geom_rect(
+    data=data.frame(
+      xmin=c(1971, 2001)-0.5,
+      xmax=c(1978, 2004)+0.5,
+      ymin=c(0.5, 0.5),
+      ymax=c(3.5, 1.5)
+    ),
+    mapping=aes(
+      xmin=xmin,
+      xmax=xmax,
+      ymin=ymin,
+      ymax=ymax
+      ),
+    fill="transparent",
+    linetype="solid",
+    color="black"
+    )
+  )
+plt$make()
+```
+
+```{r}
+plt$scale = scale_fill_gradient2(
+  limits = c(-4, 4),
+  low = "#ed2920",
+  mid = "white",
+  high = "#aabdc7",
+  midpoint = 0,
+  name="Changes in Life Expectancy",
+  na.value = "transparent"
+  )
+plt$make()
+```
+

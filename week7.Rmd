@@ -1,0 +1,13 @@
+```{r}
+# install.packages('IRkernel')
+# IRkernel::installspec(user = FALSE)
+```
+
+```{r}
+# Source your local files
+c("./R/marriageSupport.R",
+  "./R/makeup.R") |> purrr::walk(source)
+
+
+```
+

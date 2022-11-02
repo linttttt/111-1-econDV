@@ -1,0 +1,154 @@
+```{r}
+envExample = new.env()
+envExample$obj1 = c(1, 2)
+envExample$obj2 = "John"
+envExample$obj1Add2 = function(){
+  return(envExample$obj1 + 2)
+}
+```
+
+```{r}
+attach(envExample)
+search()
+```
+
+```{r}
+ls()
+rm(envExample)
+ls()
+
+obj1
+obj2
+```
+
+```{r}
+listExample = list()
+listExample$a = 3
+listExample$aPlus2 = function(){
+  listExample$a = listExample$a + 2
+}
+
+listExample$aPlus2()
+listExample$a
+```
+
+```{r}
+plot = Plot(data = data.frame())
+```
+
+```{r}
+ggplot() +
+  geom_line(
+    mapping=aes(
+      x=c(1, 2, 3),
+      y=c(2, 3, 2),
+    )
+  ) +
+  geom_line(
+    mapping=aes(
+      x=c(1, 2, 3),
+      y=c(5, 2, 6)
+    )
+  )
+```
+
+```{r}
+plt = Plot(
+  data.frame(
+    x=c(1, 2, 3, 1, 2, 3),
+    y=c(2, 3, 2, 5, 2, 6),
+    gender=c("m", "m", "m", "f", "f", "f")
+  )
+)
+plt$ggplot=ggplot(data=plt$data)
+plt$geoms = list(
+  geom_line(
+    aes(x=x, y=y, group=gender)
+  )
+)
+plt$make()
+
+```
+
+```{r}
+education = data.frame(
+  gender = c("male", "male", "female", "female"),
+  education = c("high", "low", "high", "low"),
+  prop = c(0.7, 0.3, 0.6, 0.4)
+)
+
+plt2 = Plot(education)
+plt2$ggplot = ggplot(data = plt2$data)
+plt2$geoms = list(
+  geom_col(
+    mapping = aes(
+      x = gender,
+      y = prop,
+      fill = education
+    ),
+    position = "dodge"
+  )
+)
+plt2$make()
+```
+
+```{r}
+plt3 = Plot(
+  data.frame(
+    gender = sample(
+      c("m", "f"),
+      size = 100,
+      prob = c(0.2, 0.8), replace = T
+      )
+  )
+)
+
+plt3$ggplot = ggplot(data = plt3$data)
+plt3$geoms = list(
+  geom_bar(
+    mapping = aes(x = gender)
+  )
+)
+
+plt3$make()
+```
+
+```{r}
+data_cat1 <- data.frame(
+      x=c(1, 2, 3, 1, 2, 3),
+      y=c(0.2, 0.3, 0.2, 0.4, 0.4, 0.52),
+      fill=c("m", "m", "m", "f", "f", "f")
+)
+
+data_cat1$fill <- factor(data_cat1$fill)
+levels(data_cat1$fill)
+
+ggplot(
+  data=data_cat1
+) + 
+  geom_area(
+    mapping=aes(
+      x=x,
+      y=y,
+      fill=fill
+    )
+  )
+```
+
+```{r}
+data_cat1$fill <- factor(
+  data_cat1$fill, levels = c("m", "f"))
+levels(data_cat1$fill)
+
+ggplot(
+  data=data_cat1
+) + 
+  geom_area(
+    mapping=aes(
+      x=x,
+      y=y,
+      fill=fill
+    )
+  )
+```
+

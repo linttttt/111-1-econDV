@@ -1,0 +1,489 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+```{r eval=T, echo=FALSE}
+klippy::klippy()
+```
+
+
+# Geometries and Aesthetics
+
+-   [Available geometries](https://ggplot2.tidyverse.org/reference/index.html#section-layers)
+
+-   Two steps:
+
+    -   Step 1: What geometries do you see?
+
+    -   Step 2: With a given geometry, what aesthetics do you observe?
+
+------------------------------------------------------------------------
+
+```{r , eval=T, echo=F}
+teachDS::img_centering("https://i0.wp.com/cmdlinetips.com/wp-content/uploads/2019/11/scatter_plot_with_ggplot_scale_xy_log10_color.png")
+```
+
+-   Geometries?
+
+-   Aesthetics?
+
+------------------------------------------------------------------------
+
+```{r , eval=T, echo=F}
+teachDS::img_centering("https://belayeth.com/wp-content/uploads/2021/06/Rplot.png")
+```
+
+------------------------------------------------------------------------
+
+```{r , eval=T, echo=F}
+teachDS::img_centering("https://www.r-graph-gallery.com/img/graph/50-51-52-scatter-plot-with-ggplot2.png")
+```
+
+------------------------------------------------------------------------
+
+```{r , eval=T, echo=F}
+teachDS::img_centering("https://www.economist.com/img/b/1280/755/90/sites/default/files/images/2021/09/articles/main/20210918_woc289.png")
+```
+
+## An Example
+
+```{r , eval=T, echo=F}
+teachDS::img_centering("https://www.economist.com/img/b/600/895/90/sites/default/files/images/2021/09/articles/body/20210918_woc287.png")
+```
+
+-   Geom:\
+    [`geom_point`](https://ggplot2.tidyverse.org/reference/geom_point.html):
+
+    -   x, y：varies with observations
+
+    -   color (線框顏色): constant
+
+    -   stroke (線框粗細): constant
+
+    -   fill (內部塗色): constant
+
+    -   size (點的大小): constant
+
+    [`geom_text`](https://ggplot2.tidyverse.org/reference/geom_text.html#aesthetics):
+
+    -   x, y: varies with observations
+
+    -   label: varies with observations
+
+    -   hjust (文字水平錨點）：between 0 and 1
+
+    -   vjust (文字垂直錨點）: between 0 and 1
+
+```{r}
+if(!require("R6")) install.packages("R6")
+
+```
+
+```{r}
+Action = R6::R6Class("Action",
+  public=list(
+    change=function(data){
+      # print(self$data)
+      data+3
+    }
+  ),
+  lock_objects = F)
+
+Person = R6::R6Class("Person",
+  inherit = Action,
+  public = list(
+    data=NULL,
+    newData=NULL,
+    initialize = function(data){
+      print(data)
+      self$data=data
+      print(self)
+      # invisible(self.data)
+    },
+    changeMyself=function(){
+      print(super)
+      self$newData = Action$public_methods$change(self$data)
+    }
+  ))
+
+p1 = Person$new(22)
+p1$data
+p1$changeMyself()
+p1$newData
+
+Action$public_methods$change <- function(data) data**2
+
+p1$data
+p1$changeMyself()
+p1$newData
+```
+
+
+```{r}
+GG <- R6::R6Class(
+  "GG",
+  public=list(
+    # fields
+    data=NULL,
+    initialize=function(data){
+      self$data = data;
+    },
+    change=function(){
+      self$data+4
+    }
+  ),
+  lock_objects = F
+)
+plot1= GG$new(data=1)
+
+class(GG)
+typeof(GG)
+print(GG)
+typeof(plot1)
+print(plot1)
+parent.env(plot1)
+```
+
+## Geom layers
+
+The construction of geom layers is normally as:
+
+```{r}
+ggplot()+
+  geom_xxx()+geom_yyy()+geom_zzz()
+```
+
+It is also acceptable to use them as:
+```{r}
+ggplot()+
+  list(geom_xxx(), geom_yyy(), geom_zzz())
+```
+
+The format later is more flexible for changing geom layer sequence.
+
+Actually other layer of setting can have both format as well. 
+
+## Encapsulation
+
+At the end of the day we usually want to save certain object and import it later. However, without carefulness of construction, the object's value will depend on some other object in the global environment. When saving objects, both objects (the target one and it dependent objects) must be saved together.
+```{r}
+a=3
+fun=function(){a+4}
+saveRDS(fun, file="myfun.R")
+```
+
+Next day you restart rstudio
+```{r}
+rm(list=ls())
+fun=readRDS("myfun.R")
+fun()
+```
+
+A better target object should be build so that it encapsulates all information it needs.
+
+```{r}
+myFun = list()
+myFun$a=3 # property/attribute/interface
+myFun$fun = function(){myFun$a+3}
+
+saveRDS(myFun, file="myFun.Rds")
+```
+
+```{r}
+rm(list=ls())
+myFun = readRDS("myFun.Rds")
+myFun$fun()
+```
+
+## Build a plot object
+
+A plot consists of 
+
+  * Data 
+  
+  * Sequence of geom layers
+  
+  * Scale adjustment
+  
+  * theme setting and others
+
+where geom layers all depends on the data supplied in the plot.
+
+### data 3
+
+```{r}
+library(ggplot2)
+plot$data
+plot$geoms = c()
+```
+
+
+```{r}
+googlesheets4::gs4_deauth()
+googlesheets4::read_sheet(
+  "https://docs.google.com/spreadsheets/d/1lkts4hLkrAFAobONFXiEjgDnuUmXKci6YF--vg1pC1s/edit?usp=sharing",
+  sheet="data 3"
+) -> data3
+```
+
+```{r}
+library(dplyr)
+# plot = list()
+# plot=listnew.env(parent = emptyenv())
+# plot$data = data3
+plot = Plot(data = data3)
+
+plot$ggplot = ggplot2::ggplot(
+  data=plot$data,
+  aes(
+    x=`Total Effect`,
+    y=Characteristic
+    )
+  )
+
+plot$data3max =  
+  {plot$data |>
+  group_by(Characteristic) |>
+  summarise(
+    maxMisery = max(`Total Effect`)
+  ) |>
+  ungroup()}
+
+# plot$geomLayers = list(
+#   geom_segment(data=plot$data3max, 
+#     mapping=aes(
+#       x=0,
+#       y=Characteristic,
+#       xend=maxMisery,
+#       yend=Characteristic),
+#     alpha=0.7,
+#     color='black'
+#     ),
+#   geom_point(
+#     shape=20,
+#     alpha=0.5,
+#     mapping=aes(
+#       color=Country,
+#       size=Population)
+#     ),
+#   geom_point(
+#     mapping=aes(color=Country)
+#     )
+# )
+
+plot$geoms = list(
+  geom_segment(
+    data=plot$data3max, 
+    mapping=aes(
+      x=0,
+      y=Characteristic,
+      xend=maxMisery,
+      yend=Characteristic),
+    alpha=0.7,
+    color='black'
+    ),
+  geom_point(
+    shape=20,
+    alpha=0.5,
+    mapping=aes(
+      color=Country,
+      size=Population)
+    ),
+  geom_point(
+    mapping=aes(color=Country)
+    )
+)
+
+
+plot$make()
+```
+
+
+
+
+## Properties and Methods
+
+Properties are object attributes that are born to be constant. Like `$data` attribute. All other elements depends on it. It would be wise the keep the dependency so that when `$data` updated, all other elements are updated consequently
+```{r}
+obj = list()
+obj$data=c(2,3)
+obj$data2 = obj$data+c(-1, 2)
+print(obj$data2)
+
+
+obj$data= c(1,1)
+print(obj$data2)
+```
+To keep the dependency, you need to keep the programming block that produces the dependent objects.
+
+```{r}
+obj = list()
+obj$data=c(2,3)
+obj$data2 = function(){ obj$data+c(-1, 2)}
+print(obj$data2())
+
+obj$data=c(1,1)
+print(obj$data2())
+```
+
+We want to build a `plot` object which
+
+  * Encapsulates(封裝) all required information.
+  
+  * Contains source data as its property; and
+  
+  * All other depending elements are consequential as a function.
+
+***
+
+For ggplot, we can set
+
+   * data, ggplot, and the list of geoms as properties
+   
+   * make method that creates the visual look.
+   
+```{r}
+plot=list()
+# retrieve data properties
+plot$data = data.frame(x=c(1,2), y=c(5, -1))
+# ggplot
+plot$ggplot = ggplot(data=plot$data, aes(x=x, y=y))
+# list of geoms
+plot$geoms = list(
+  point=geom_point(), line=geom_line()
+)
+# make method
+plot$make = function(){
+  plot$ggplot+plot$geoms
+}
+
+# you can also put a save method
+plot$save = function(filename){
+  saveRDS(plot, filename)
+  message(paste("The plot is saved at ", filename))
+}
+plot$make()
+plot$save("myplot.Rds")
+```
+
+Or you can create `plot` via:
+```{r}
+plot=list(
+  data = ,
+  ggplot = ggplot(), 
+  geoms = list(...) ,
+  make = function(){
+    plot$ggplot+plot$geoms
+  },
+  save = function(){
+    saveRDS(plot, filename)
+    message(paste("The plot is saved at ", filename))
+  }
+)
+```
+
+## Plot constructor
+
+```{r}
+Plot <- function(data) {
+  plot <- list(
+    data = data,
+    ggplot = NULL,
+    geoms = NULL,
+    make = function() {
+      plot$ggplot + plot$geoms
+    },
+    save = function() {
+      saveRDS(plot, filename)
+      message(paste("The plot is saved at ", filename))
+    }
+  )
+  return(plot)
+}
+```
+
+```{r}
+myTools = new.env()
+myTools$Plot <- Plot
+attach(myTools)
+
+```
+
+<!--
+
+## Object Oriented Programming
+Since we are likely to create plot object with the same properties and methods, we can define a class. Each plot object is generated from the class constructor. 
+```{r}
+Plot = R6::R6Class("Plot",
+  public=list(
+        data = NULL,
+        ggplot = NULL,
+        geoms = NULL ,
+        initialize = function(data){
+          self$data=data
+        },
+        make = function(){
+          self$ggplot+self$geoms
+        },
+        save = function(){
+          saveRDS(plot, filename)
+          message(paste("The plot is saved at ", filename))
+        }
+))
+```
+
+  * construct a class called "Plot"
+  
+  * create (initialize) a Plot class object `Plot$new(...)`
+  
+```{r}
+# create and initiali
+plot = Plot$new(
+  data=data.frame(x=c(1,2), y=c(5, -1)))
+
+# ggplot
+plot$ggplot = ggplot(data=plot$data, aes(x=x, y=y))
+# list of geoms
+plot$geoms = list(
+  point=geom_point(), line=geom_line()
+)
+
+plot$make()
+```
+
+
+-->
+### econDV2::ggdash
+
+  * At every aesthetic element to be adjusted, attach `#input${aesthetic_name}` at the end of the line as:
+
+```{r}
+library(ggplot2)
+plot = Plot(data.frame(x=c(1,2), y=c(5, -1)))
+plot$ggplot = ggplot(data=plot$data)
+plot$geoms = list(
+  geom_point(
+    aes(
+      x=x, y=y
+      ),
+    color="red", #input$color
+    size=3 #input$size
+  ),
+  geom_line(
+    aes(x=x,y=y)
+  )
+)
+plot$make = function() {
+      plot$ggplot + plot$geoms
+    }
+
+plot$make()
+#plot$ggplot + plot$geoms
+```
+
+
+## Graph export
+
+The easiest way to export the graph as you see on `gg$dash()` is to right click the image on the shiny dashboard and choose **save image as** to export the image. 
+
