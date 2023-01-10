@@ -1,3 +1,5 @@
+#同學作品連結
+#https://github.com/KinoCyan/111-1-econDV/blob/main/R_homework_w13_411073116.R
 library(stringr)
 library(magrittr)
 library(tidyr)
