@@ -7,11 +7,11 @@ Exercise_Data <- readxl::read_excel(
   sheet = "Sheet10",
   col_types = c("numeric", "numeric", "numeric", "numeric")
   )
-
+View(Exercise_Data)
 Exercise_Data |> purrr::map(class)
 ```
 
-
+##同學
 ```{r}
 tidyr::pivot_longer(
   data = Exercise_Data,
@@ -19,11 +19,11 @@ tidyr::pivot_longer(
   names_to = "country",
   values_to = "lifeExpectancy"
 ) -> Exercise_Data_longer
-```
 
-```{r}
-plot <- Plot(Exercise_Data_longer)
-plot$ggplot <- ggplot(data=plot$data)
+# plot <- Plot(Exercise_Data_longer)
+# plot$ggplot <- ggplot(data=plot$data)
+plot <- Plot()
+plot$ggplot <- ggplot(data=Exercise_Data_longer)
 plot$theme= list(
   theme(
     axis.line.y = element_blank(),
@@ -45,7 +45,46 @@ plot$geom=list(
 
 plot$ggplot+plot$theme+plot$geom+coord_flip()
 ```
+##修正版
+```{r}
+Exercise_Data |>
+ tidyr::pivot_longer(
+   cols=2:4,
+   names_to = "country",
+   values_to = "lifeExpChange"
+ ) |>
+ dplyr::mutate(
+   year = as.character(year),
+   y = dplyr::case_when(
+     country == "country A" ~ 0.5,
+     country == "country B" ~ 1.5,
+     country == "country C" ~ 2.5
+     )
+ ) -> Exercise_Data_longer
+View(Exercise_Data_longer)
 
+plt <- Plot()
+plt$ggplot <- ggplot(data=Exercise_Data_longer)
+plt$theme= list(
+    theme(
+      axis.line.y = element_blank(),
+      axis.ticks.y = element_blank(),
+      panel.grid.major.y = element_line(color="#c4d1d7")
+    ))
+plt$geom=list(
+  geom_bin_2d(
+    mapping=aes(
+      x=year,
+      y=country,
+      fill=lifeExpChange
+    )
+    #binwidth = 0.3
+  )
+)
+
+plt$make()
+```
+##//
 
 ##老師
 ```{r}
@@ -56,21 +95,23 @@ Exercise_Data |>
     names_to = "country",
     values_to = "lifeExpChange"
     ) |> 
-  mutate(
+  dplyr::mutate(
     y = dplyr::case_when(
       country == "country A" ~ 0.5,
       country == "country B" ~ 1.5,
       country == "country C" ~ 2.5
       )
     ) -> Exercise_Data_long
-head(Exercise_Data_long)
+View(Exercise_Data_long)
 ```
 
 
 ```{r}
 # base plot
-plt=Plot(Exercise_Data_long)
-plt$ggplot = ggplot(data=plt$data)
+plt=Plot()
+plt$ggplot = ggplot(data=Exercise_Data_long)
+# plt=Plot(Exercise_Data_long)
+# plt$ggplot = ggplot(data=plt$data)
 plt$geoms = list(
   geom_tile(
     aes(

@@ -1,0 +1,203 @@
+```{r}
+#data <- readr::read_csv("C:/Users/user/Downloads/學生身高平均值(6歲-15歲).csv")
+#data <- readr::read_csv("https://eip.fia.gov.tw/data/BGMOPEN99X.csv")
+
+#登革熱病
+data <- jsonlite::fromJSON("https://od.cdc.gov.tw/eic/Dengue_Daily.json")
+
+remove(list = data[[11]])
+typeof(data[[3]])
+class(data[[3]])
+names(data)
+unique(data$居住縣市)
+
+data$年齡層 |> 
+  factor() |>
+  levels()
+data$年齡層[[1]]
+for (i in c(1:80033)) {
+  if(data$年齡層[[i]] %in% c(0:4)){
+    data$年齡層[[i]] <- "0-4"
+  }
+}
+dataLevels
+library(magrittr) # %<>%
+dataLevels %<>% append("5-9", after = 1)
+dataCorrectLevels <- dataLevels[-11]
+dataCorrectLevels
+data$年齡層 |> 
+  factor(levels = dataCorrectLevels
+    ) -> data$年齡層
+sum(data$居住縣市 == "None")
+```
+
+```{r}
+#臺灣菸酒股份有限公司產品價目表
+data1 <- readr::read_csv("https://quality.data.gov.tw/dq_download_csv.php?nid=49742&md5_url=d5e123f0c66f5872bf6a2ea336a82d11")
+unique(data1$產品類別)
+```
+
+```{r}
+#COVID-19各國家地區累積病例數與死亡數
+data2 <- readr::read_csv("https://od.cdc.gov.tw/eic/covid19/covid19_global_cases_and_deaths.csv")
+```
+
+```{r}
+#地區年齡性別統計表-嚴重特殊傳染性肺炎
+####已使用####
+# data3 <- readr::read_csv("https://od.cdc.gov.tw/eic/Age_County_Gender_19Cov.csv")
+# 
+# dataCOVID <- data3
+# unique(data3$年齡層)
+# unique(data3$縣市)
+# 
+# dataCOVID |> 
+#   dplyr::filter(
+#       stringr::str_detect(`是否為境外移入`,"否")
+#     ) -> COVIDNational
+# COVIDNational[-c(1,5,7)] -> COVIDNational
+# COVIDNational |> purrr::map(class)
+# 
+# COVIDNational |> 
+#   dplyr::mutate(
+#     `區域` = dplyr::case_when(
+#       `縣市` %in% c("新北市", "桃園市", "台北市",
+#         "基隆市", "新竹市", "宜蘭縣", "新竹縣") ~ "北部",
+#       `縣市` %in% c("台中市", "南投縣", "彰化縣",
+#         "苗栗縣", "雲林縣") ~ "中部",
+#       `縣市` %in% c("台南市", "屏東縣", "高雄市",
+#         "嘉義市", "嘉義縣", "澎湖縣") ~ "南部",
+#       `縣市` %in% c("台東縣", "花蓮縣") ~ "東部",
+#       `縣市` %in% c("連江縣", "金門縣") ~ "離島"
+#       )
+#     ) -> COVIDNational
+# unique(COVIDNational$區域)
+# COVIDNationalSum <- NULL
+# library(dplyr)
+# library(magrittr)
+# for (i in c(2020:2022)) {
+#   for (j in c(1:12)) {
+#     
+#     COVIDNational |> 
+#       filter(COVIDNational$`發病月份`==j) |>
+#       group_by(`區域`) |>
+#       summarise(
+#         year = i,
+#         month = j,
+#         yearPlusMonth = i*100+j,
+#         number= sum(
+#         as.numeric(`確定病例數`))
+#         ) |> 
+#       dplyr::ungroup() |>
+#       dplyr::bind_rows(COVIDNationalSum) |> 
+#       arrange(yearPlusMonth)-> COVIDNationalSum
+#     
+#   }
+# }
+# View(COVIDNationalSum)
+```
+
+```{r}
+#法定傳染病—確定人數
+data4 <- readr::read_csv("https://data.ntpc.gov.tw/api/datasets/36844FE9-FA16-4D59-8348-0BF85AF0FBD9/csv/file")
+
+library(stringr)
+library(magrittr)
+str4 <- "Field1(年)、Field2(總計男)、Field3(總計女)、Field4(總計_每萬人_男)、Field5(總計_每萬人_女)、Field6(第一類男)、Field7(第一類女)、Field8(第二類男)、Field9(第二類女)、Field10(第三類男)、Field11(第三類女)、Field12(第四類男)、Field13(第四類女)、Field14(第五類男)、Field15(第五類女)、Field16(其他男)、Field17(其他女)"
+
+str4 %<>% stringr::str_split(pattern = "、")
+names(data4) <- str4[[1]]
+```
+
+```{r}
+#臺北市傳染病人數(各類法定傳染病確定人數)－96年以後
+data5 <- readr::read_csv("C:/Users/user/Downloads/b3be8deafcc626d72107c6e6470d7005_export.csv")
+unique(data5$項目)
+```
+
+```{r}
+#全國財產稅籍持有人數統計表
+data6 <- readr::read_csv("https://www.fia.gov.tw/download/f274f909ca284865a51dff7995277c0e")
+```
+
+```{r}
+#電子書公開閱覽平臺書目資料
+data7 <- readr::read_csv("https://taiwanebook.ncl.edu.tw/digitcenter/TEBOpen.csv")
+```
+
+```{r}
+#不符合食品資訊資料集
+#https://data.gov.tw/dataset/6133
+data8 <- readr::read_csv("https://data.fda.gov.tw/opendata/exportDataList.do?method=ExportData&InfoId=52&logType=2")
+```
+
+```{r}
+#菸酒市場佔有率分析表
+#https://data.gov.tw/dataset/7386
+data9 <- readr::read_csv("https://gaze.nta.gov.tw/dnt-bin/APDNT/PDNT/file/OpenAPI/D6-01.csv")
+```
+
+```{r}
+#歷年酒駕肇事受傷及死亡件數、人數統計表
+#https://data.gov.tw/dataset/9018
+data10 <- readr::read_csv("https://data.moi.gov.tw/MoiOD/System/DownloadFile.aspx?DATA=000F1CF6-FED1-4C08-B405-4A5B7A7E2BC2")
+```
+
+```{r}
+#酒駕、吸毒駕駛等(35條)性別統計
+#https://data.gov.tw/dataset/33700
+data11 <- readr::read_csv("https://www.thb.gov.tw/data.ashx?id=a939673d-c4a4-4ce7-bb1b-0bdb039e0f1e&format=Other&aid=ee8f8400-32a7-4b6e-875e-a1b8def2d07b")
+```
+
+```{r}
+#道路交通事故肇事車種(A1+A2類)─按機關別分
+#https://data.gov.tw/dataset/9012
+data12 <- readr::read_csv("https://statis.moi.gov.tw/micst/stmain.jsp?sys=220&kind=21&type=1&funid=c0690104&cycle=1&outmode=12&utf=1&compmode=0&outkind=3&fldspc=0,10,&codspc0=0,31,&ym=8401&ymt=11103")
+```
+
+```{r}
+#空氣品質指標(AQI)
+#https://data.gov.tw/dataset/40448
+data13 <- readr::read_csv("C:/Users/user/Downloads/aqx_p_432.csv")
+str13 <- c("sitename(測站名稱)、county(縣市)、aqi(空氣品質指標)、pollutant(空氣污染指標物)、status(狀態)、so2(二氧化硫(ppb))、co(一氧化碳(ppm))、o3(臭氧(ppb))、o3_8hr(臭氧8小時移動平均(ppb))、pm10(懸浮微粒(μg/m3))、pm2.5(細懸浮微粒(μg/m3))、no2(二氧化氮(ppb))、nox(氮氧化物(ppb))、no(一氧化氮(ppb))、wind_speed(風速(m/sec))、wind_direc(風向(degrees))、datacreationdate(資料發布時間)、co_8hr(一氧化碳8小時移動平均(ppm))、pm2.5_avg(細懸浮微粒移動平均值(μg/m3))、pm10_avg(懸浮微粒移動平均值(μg/m3))、so2_avg(二氧化硫移動平均值(ppb))、longitude(經度)、latitude(緯度)、siteid(測站編號)")
+str13 %<>% stringr::str_split(pattern = "、")
+names(data13) <- str13[[1]]
+```
+
+```{r}
+#空氣品質指標(AQI)概況
+#https://data.gov.tw/dataset/89029
+data14 <- readr::read_csv("C:/Users/user/Downloads/stat_p_115.csv")
+str14 <- c("item1(統計期)、item2(統計區)、value1(總站日數)、value2(良好站日數)、value3(普通站日數)、value4(對敏感族群不健康站日數)、value5(對所有族群不健康站日數)、value6(非常不健康站日數)、value7(危害站日數)、value8(aqi>100日數比率)")
+str14 %<>% stringr::str_split(pattern = "、")
+names(data14) <- str14[[1]]
+```
+
+```{r}
+#台灣電力公司_各國電價比較
+#https://data.gov.tw/dataset/17080
+library(stringr)
+library(magrittr)
+#data14 <- readr::read_csv("C:/Users/user/Downloads/API_SP.POP.BRTH.MF_DS2_en_csv_v2_4750179.csv")
+data15 <- readr::read_csv("https://data.taipower.com.tw/opendata/apply/file/d007009/台灣電力公司_各國電價比較.csv")
+```
+
+```{r}
+#犯罪資料
+#https://data.gov.tw/dataset/14200
+data16 <- readr::read_csv("https://data.moi.gov.tw/MoiOD/System/DownloadFile.aspx?DATA=F9D48036-DDE3-452A-8FD7-6437D6C39104")
+
+```
+
+```{r}
+data17 <- readr::read_csv("C:/Users/user/Downloads/giniIndex.csv")
+data18 <- readr::read_csv("C:/Users/user/Downloads/sexRatio.csv")
+data19 <- readr::read_csv("C:/Users/user/Downloads/ageDependencyRatio.csv")
+```
+
+```{r}
+#install.packages("openxlsx")
+library(openxlsx)
+countryName <- read.xlsx("C:/Users/user/Downloads/countryName.xlsx", sheet = "Sheet1")
+```
+

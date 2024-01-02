@@ -1,0 +1,54 @@
+```{r}
+earthquake = readr::read_csv("C:/Users/user/Documents/GitHub/111-1-econDV/dataSource/earthquake.csv")
+names(earthquake) <- c("地震時間","經度","緯度","規模","深度"
+)
+# jsonlite::fromJSON("C:/Users/user/Documents/GitHub/111-1-econDV/dataSource/export1668258895.json")
+View(earthquake2$cwbopendata$dataset$catalog$earthquakeinfo)
+```
+
+```{r}
+library(magrittr) # %<>%
+library(stringr)
+earthquakeData <- NULL
+#讀資料
+for (i in c(1999:2022)) {
+  readxl::read_excel(
+    paste("C:/Users/user/Documents/GitHub/111-1-econDV/dataSource/地震活動彙整_",i,".xlsx",sep=""),
+  sheet = paste("地震活動彙整_", i,sep=""),
+  col_types = c("numeric", "date", "numeric", "numeric", "numeric", "numeric", "text")
+  ) |> dplyr::bind_rows(earthquakeData) -> earthquakeData
+}
+
+#整理資料
+earthquakeData$`縣市` <- stringr::str_sub(earthquakeData$位置, start = 1, end = 2)
+earthquakeData$地震時間 %<>%lubridate::ymd_hms()
+#class(earthquakeData$地震時間)
+earthquakeData %<>% dplyr::arrange(`地震時間`)
+
+#統一縣市名稱
+unique(earthquakeData$縣市)
+earthquakeData$縣市[[1]] == "台東"
+for (i in c(1:1201)) {
+  if(earthquakeData$縣市[[i]] == "台東"){
+    earthquakeData$縣市[[i]] <- "臺東"
+  }
+  if(earthquakeData$縣市[[i]] == "台中"){
+    earthquakeData$縣市[[i]] <- "臺中"
+  }
+  if(earthquakeData$縣市[[i]] == "台北"){
+    earthquakeData$縣市[[i]] <- "臺北"
+  }
+  if(earthquakeData$縣市[[i]] == "台南"){
+    earthquakeData$縣市[[i]] <- "臺南"
+  }
+  if(earthquakeData$縣市[[i]] == "斗六"){
+    earthquakeData$縣市[[i]] <- "雲林"
+  }
+}
+
+earthquakeData |> saveRDS(file = "./earthquake.Rds")
+earthquakeData <- readRDS(file = "./earthquake.Rds")
+earthquakeData |> purrr::map(class)
+```
+
+

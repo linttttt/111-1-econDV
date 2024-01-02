@@ -1,22 +1,49 @@
 library(ggplot2)
 library(showtext)
 library(econDV2)
-sysfonts::font_add_google("Noto Sans TC")
+# add google font: Noto Sans TC for chinese characters
+sysfonts::font_add_google('Noto Sans TC')
+# turn on showing chinese text in graph device
 showtext_auto()
-theme_set(theme(text = element_text(family = "Noto Sans TC")) +
-  theme_classic())
-ggenv = new.env()
-ggenv$gg <- list(dash = econDV2::ggdash, geom = econDV2::ggbrowse,
-aes = econDV2::ggaes)
+# set our graph theme to use the google font and a classic white back ground
+theme_set(
+  theme(
+    text=element_text(family = "Noto Sans TC")
+  )+
+    theme_classic()
+)
+# some handy tool to use later through out the class
+ggenv=new.env()
+ggenv$gg <- list(
+  dash = econDV2::ggdash,
+  geom = econDV2::ggbrowse,
+  aes = econDV2::ggaes
+)
 attach(ggenv)
-gg <- list(dash = econDV2::ggdash, geom = econDV2::ggbrowse,
-aes = econDV2::ggaes)
-
-econDV2::attachPlot()
 
 
+Sys.setenv(CLIPR_ALLOW=TRUE)
 
-library(dplyr)
+
+# library(ggplot2)
+# library(showtext)
+# library(econDV2)
+# sysfonts::font_add_google("Noto Sans TC")
+# showtext_auto()
+# theme_set(theme(text = element_text(family = "Noto Sans TC")) +
+#   theme_classic())
+# ggenv = new.env()
+# ggenv$gg <- list(dash = econDV2::ggdash, geom = econDV2::ggbrowse,
+# aes = econDV2::ggaes)
+# attach(ggenv)
+# gg <- list(dash = econDV2::ggdash, geom = econDV2::ggbrowse,
+# aes = econDV2::ggaes)
+# 
+# econDV2::attachPlot()
+# 
+# 
+# 
+# library(dplyr)
 # 
 # Plot <- function(data) {
 #   plot <- list(

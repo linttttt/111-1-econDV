@@ -1,0 +1,266 @@
+---
+title: "Final Term"
+output: html_notebook
+---
+> The projects introduces top 50 Spotify music from 2010 to 2019 and recommends a song or playlist according to user preferences. Additionaly further analysis of data was conducted. 
+> This data set comes from gist.github.com user, however it was originally scrapped from Spotify and published on Kaggle.
+> The data consists of 603 observations with 14 features (title, artist, genre, year, beats_per_min, energy, danceability, loudness, liveness, valence, length, acousticness, speechiness, popularity).
+0.1 Needed Packages
+```{r}
+#the first time, you need to install the following package 
+#install.packages(c('readr', 'svDialogs', 'dplyr'))
+```
+
+```{r}
+library(readr)
+library(svDialogs)
+library(dplyr)
+```
+
+0.2 Load Data
+```{r}
+#load 
+spotify_top50 <- read.csv("https://gist.githubusercontent.com/rioto9858/ff72b72b3bf5754d29dd1ebf898fc893/raw/1164a139a780b0826faef36c865da65f2d3573e0/top50MusicFrom2010-2019.csv", header=TRUE, sep=",")
+#create a list
+project = list()
+#store the data used in another list
+project$data$spotify_top50 = list(
+  value=spotify_top50,
+  description="spotify_top50_from_2010_to_2019",
+  source="https://gist.githubusercontent.com/rioto9858/ff72b72b3bf5754d29dd1ebf898fc893/raw/1164a139a780b0826faef36c865da65f2d3573e0/top50MusicFrom2010-2019.csv"
+)
+#save
+saveRDS(project, file="FinalTermSpotifyG4.Rds")
+```
+
+0.3 Have a look
+```{r}
+#how data set looks like 
+View(spotify_top50)
+#specific information about the columns (min, max, mean, ...)
+summary(spotify_top50)
+dplyr::glimpse(spotify_top50)
+```
+
+0.4 Change column names
+```{r}
+#change column names for convenience
+colnames(spotify_top50) <- c('title','artist','genre','year', 'beats_per_min', 'energy', 'danceability', 'loudness', 'liveness', 'valence', 'length', 'acousticness', 'speechiness', 'popularity')
+#set music genres as "unique" is used to extract only the different genres of the data set (spotify_top50)
+genres <- unique(spotify_top50$genre)
+head(spotify_top50)
+```
+
+0.5 Exploration
+```{r}
+#see all features
+names(project$data$spotify_top50$value)[c(1:14)]
+```
+
+```{r}
+#see all 49 music genres
+project$data$spotify_top50$value[[3]] |> unique()
+```
+
+```{r}
+#example of one observation
+project$data$spotify_top50$value[c(1:14)][1,]
+```
+
+```{r}
+# see how many songs each artist has on the spotify top 50
+spotify_top50$artist |> table()
+# there are 184 artists
+spotify_top50$artist |> unique() |> length()
+# or 
+#NROW(project$data$spotify_top50$value[[2]] |> unique())
+```
+
+```{r}
+# artist which had showed up the most on the list
+names(which.max(table(spotify_top50$artist)))
+```
+
+1. Collect user information
+```{r}
+#create an empty list
+user <- list()
+#add the user's information
+#dlgInput is a function that makes a window pop out with the question
+user$name <- dlgInput("What's your name ?", Sys.info()["user"])$res
+#dlg_list is a function that also makes a window pop out with the list (here we choose list of genre and you can select which genres you like)
+user$chosen_genres <- dlg_list(genres, multiple = TRUE, title = "Choose a genre that you like : ")$res
+#ask you if like danceable music and you can select T or F
+like_danceability <- dlgInput("Do you like danceable music (T or F): ")$res
+#converts your answer (character type) into logical (True or False)
+if(like_danceability == "T"){user$like_danceability <- TRUE} else if (like_danceability == "F"){user$like_danceability <- FALSE}
+#ask you if like loud music and you can select T or F
+like_loudness <- dlgInput("Do you like loud music (T or F): ")$res
+#converts your answer (character type) into logical (True or False)
+if(like_loudness == "T"){user$like_loudness <- TRUE} else if (like_loudness == "F"){user$like_loudness <- FALSE}
+#ask you if like energetic music and you can select T or F
+like_energetic <- dlgInput("Do you like energetic music (T or F): ")$res
+#converts your answer (character type) into logical (True or False)
+if(like_energetic == "T"){user$like_energetic <- TRUE} else if (like_energetic == "F"){user$like_energetic <- FALSE}
+#create an empty list that will be filled later
+user$created_playlists <- list()
+#it shows what "user" looks like 
+user
+```
+
+2. Song recommendation 
+```{r}
+#filter is a function that filters the data set (spotify_top50) by a column name which here is "genre"
+#sample(1:length(user$chosen_genres),1) --> picks a random number between 1 and the number of genre chosen by the user (example: if you choose 3 different genres, then length(user$chosen_genres) is 3, so it will pick a number between 1 and 3)
+filtered_by_genre <- filter(spotify_top50, genre == user$chosen_genres[[sample(1:length(user$chosen_genres),1)]])
+#you can write View(filtered_by_genre) to see what it looks like
+#filtered_by_genre[sample(1:nrow(filtered_by_genre), 1, replace=FALSE),] --> selects a random song from the data set previously filtered by genre and add the recommended songs to "user"
+user$recommended_song <- filtered_by_genre[sample(1:nrow(filtered_by_genre), 1, replace=FALSE),]
+#paste0 --> writes the sentence "You like the genre x, then you'll like this song for sure : /title - artist/
+#recommends a song based on the genre liked
+paste0("You like the genre \'", user$recommended_song$genre, "\', then you'll like this song for sure : ", user$recommended_song$title, " - ", user$recommended_song$artist," (", user$recommended_song$year,")")
+```
+
+2.1 Let's play the song
+```{r}
+#creates the URL of the recommended song on YouTube and browse it
+#gsub("[[:space:]]", "+", user$recommended_song$title) --> the space between the words in the title are replaced by "+"
+#gsub("[[:space:]]", "+", user$recommended_song$artist) --> same thing for the name of artists
+user$recommended_song$url <- paste("https://www.youtube.com/results?search_query=",gsub("[[:space:]]", "+", user$recommended_song$title),gsub("[[:space:]]", "+", user$recommended_song$artist))
+browseURL(user$recommended_song$url)
+```
+
+3. Create playlist with a song of each music genre -> "let's discover playlist"
+```{r}
+#create a table (matrix) with 14 columns and 0 row
+lets_discover_playlist = data.frame(matrix(ncol = 14, nrow = 0))
+#the columns created have the same columns' names than the one in the original data set (spotify_top50)
+colnames(lets_discover_playlist) <- colnames(spotify_top50)
+#here we create a loop in which i will increased by 1 each time 
+#there are 50 different genres (length(genres)=50). This will make that i=1 in the first loop, then i=2 in the second loop until i=50. 
+for(i in 1:length(genres)){
+#each loop, it will filter the data set (spotify_top50) by the genre that correspond to i (example: when i=1, it represents the first genre of the list (), then the data set will be sorted by . When i = 2, it represents the second one (), then the data set will be sorted by and so on)
+  filtered <- filter(spotify_top50, genre == genres[[i]])
+  #it randomly picks one row in "filtered" (one row represents one music's information with the title, artist, length, ...) and this music is added in a new row in "lets_discover_playlist" (it will be adding in new row each time) 
+  lets_discover_playlist[nrow(lets_discover_playlist) + 1,] <- filtered[sample(1:nrow(filtered),1,replace=FALSE),]
+}
+#it adds the "lets_discover_playlist" in "user" 
+user$lets_discover_playlist <- lets_discover_playlist
+#dlgInput makes a window pop out with the question and you can answer T or F
+if(dlgInput("See playlist details (T or F)")$res){
+  #if you answer T to the question, it will show the details of "lets_discover_playlist" in a new tab
+  View(user$lets_discover_playlist)
+} else {  #if you answer F
+  #it will show only the title, artist and genre of "lets_discover_playlist"
+  View(select(user$lets_discover_playlist, title, artist, genre))
+}
+```
+
+4. Create playlist with you favorite choices
+4.1 Generate a random playlist (according to the user's preferences)
+```{r}
+#create an empty list
+playlist <- list()
+#dlgInput makes a window pop out with the question
+playlist$name <- dlgInput("Type the name of your new playlist : ")$res
+#strtoi --> casts (transforms) the duration you inserted in a number(integer) since "dlgInput" only retrieves characters
+playlist$duration <- strtoi(dlgInput("How long does the playlist should last in minutes (at least 15min)")$res)
+#it filters "spotify_top50" by all the genre previously chosen
+filtered <- filter(spotify_top50, genre == user$chosen_genres)
+#if you have answered that you like danceable music 
+if(user$like_danceability){
+  #then it will keep only the songs that are on average the most dancable
+  filtered <- filter(filtered, danceability >= mean(spotify_top50$danceability))
+} else if (!user$like_danceability){ #if you have answered that you don't like danceable music
+  #then it will keep only the songs that are on average the less dancable
+  filtered <- filter(filtered, danceability < mean(spotify_top50$danceability))
+}
+#the same process with loud music
+if(user$like_loudness){
+  filtered <- filter(filtered, loudness >= mean(spotify_top50$loudness))
+} else if (!user$like_loudness){
+  filtered <- filter(filtered, loudness < mean(spotify_top50$loudness))
+}
+#the same process with energetic music
+if(user$like_energetic){
+  filtered <- filter(filtered, energy >= mean(spotify_top50$energy))
+} else if (!user$like_danceability){
+  filtered <- filter(filtered, energy < mean(spotify_top50$energy))
+}
+#adjust the duration of the playlist
+#if the duration of the playlist "filtered" is shorter than the duration wanted
+if(sum(filtered$length)/60 < playlist$duration){
+  #then the following message appears
+  #the function "round" is used in order to keep 1 digit after the comma (example: 0.12 --> 0.1) 
+  print(paste0("Sorry we don't have enough songs to recommend. The following playlist '", playlist$name ,"' lasts ", round(sum(filtered$length)/60, digits = 1), " minutes"))
+  #we add "filtered" in the "content" of "playlist"
+  playlist$content <- filtered
+  #we add "playlist" in "created_playlists"
+  #[[length(user$created_playlists)+1]] --> allows to add each time a new element into "created_playlists" 
+  user$created_playlists[[length(user$created_playlists)+1]] <- playlist
+} else { #if the duration of the playlist "filtered" is too long compared to the duration wanted, we need to shorten it
+  playlist$content <- filtered
+  #the function "while" is used to keep shortening the sum of the duration of "playlist$content$length" until it approaches the duration wanted but we don't want it to be shorter !! 
+  #so we use "-mean(filtered$length" this way the duration will not be shorter than the duration wanted (it is mathematics)
+  while(sum(playlist$content$length)-mean(filtered$length)>=playlist$duration*60){
+    #to shorten the playlist, this removes a random row of the "playlist$content"  
+    playlist$content <- playlist$content[-c(sample(1:length(playlist$content$length),1)),]
+  }
+  user$created_playlists[[length(user$created_playlists)+1]] <- playlist
+  
+  #the function "round" is used in order to keep 1 digit after the comma (example: 0.12 --> 0.1) 
+  print(paste0("Your playlist '",user$created_playlists[[length(user$created_playlists)]]$name,"' (", round(sum(user$created_playlists[[length(user$created_playlists)]]$content$length)/60, digits = 1), " minutes) has been successfully created."))
+}
+#it shows what the playlist we've just created looks like
+View(user$created_playlists[[length(user$created_playlists)]]$content)
+```
+```{r}
+#let's see what has been created
+user
+```
+
+5. What is the most famous song ?
+```{r}
+#get the max poplarity value
+max_popularity_value <- max(spotify_top50$popularity)
+#get the song who has the popularity == to the previous stored value
+song <- filter(spotify_top50, popularity == max_popularity_value)
+#Show the song
+paste0("This song is the most popular : ", song$title, " - ", song$artist," (", song$year,")")
+```
+
+6. Wanna get famous, what genre works better ? (max sum of popularity)
+```{r}
+genre_with_bigger_sum = NA
+sum = 0
+for(i in 1:length(genres)){
+  #filter the whole dataset by 1 different genre each time we do the loop
+  filtered <- filter(spotify_top50, genre == genres[[i]])
+  #sum popularity of each genre
+  new_sum = sum(filtered$popularity) 
+  #compare it with the previous saved sum
+  if(new_sum > sum){ #if the current sum is bigger, then the current genre is more popular than the previous saved
+    genre_with_bigger_sum = genres[i] #save the name of the current genre
+    sum = new_sum #save its popularity sum to be able to compare with the next genres
+  }
+}
+#show the most famous saved, once the loop is finished (we have looked at all genres)
+paste0("The most famous genre is ", genre_with_bigger_sum)
+```
+
+> There are 49 unique music genres and 184 artists in the data set.
+> The artist that songs showed up most ofen on the list is Katy Perry.
+> The most papular song is Memories - Maroon 5 (2019).
+> The most famous genre is dance pop.
+---------------------------------------------------------------------------------------------------------------------------------
+Created structure
+user = list(
+        name = "name", 
+        chosen_genres = list("hip hop", "latin", "...", ...),
+        like_danceability = True, 
+        like_loudness = False, 
+        like_energitic = False, 
+        recommended_song = dataframe.row,
+        lets_discover_playlist = dataframe,
+        created_playlists = list(list(name, duration, content), ...)
+)

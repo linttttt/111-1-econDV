@@ -1,0 +1,71 @@
+---
+title: "week13"
+format: html
+editor: visual
+---
+
+# Simple feature
+
+-   <https://tpemartin.github.io/economic-data-visualization/zh-tw/annotation-and-maps.html#simple-features>
+
+### Packages
+
+-   sf: operations on simple feature data.
+
+-   sp: same as sf.
+
+-   osmdata: access open street map data.
+
+-   ggmap: map overlay effect.
+
+### Map data
+
+-   .SHP: <https://data.gov.tw/dataset/7442>
+
+```{r}
+econDV2::Map() -> mp
+mp$sf$get_sf_taiwan_simplified() -> sf_taiwan2
+sf_taiwan2$台灣本島$縣市 ->sf_taiwan_county
+ggplot()+
+  geom_sf(data = sf_taiwan_county)
+View(sf_taiwan_county)
+```
+
+    ```{r}
+    sf_taiwan <- sf::read_sf("C:/Users/user/Downloads/COUNTY_MOI_1090820.shp") #sf::read_sf("/Users/martin/Documents/GitHub/111-1-econDV/mapdata202209220943/COUNTY_MOI_1090820.shp")
+    ```
+
+-   .geojson: <https://data.gov.tw/dataset/7089>
+
+-   <https://docs.ropensci.org/geojsonio/>
+
+    ```{r}
+    gj_baywatch <- geojsonio::geojson_read("/Users/martin/Documents/GitHub/111-1-econDV/f1382000434167.geojson", what="sp")
+    sf_baywatch <- sf::st_as_sf(gj_baywatch)
+    ```
+
+# Graphing
+
+```{r}
+sf_taiwan |> ggplot() + geom_sf()
+sf_baywatch |> ggplot() + geom_sf()
+
+sf_taiwan |> ggplot() + geom_sf() + geom_sf(data=sf_baywatch, color="dodgerblue3", size=0.1)
+```
+
+```{r}
+econDV2::Map() -> mp
+mp$extract$osmBBox()
+bbox = c(
+  left=121.51348,
+  right=121.53032,
+  top=25.03996,
+  bottom=25.03132
+  )
+
+osmdata::opq(bbox) |> 
+  osmdata::add_osm_feature("amenity","theatre") |> 
+  osmdata::osmdata_sf() -> sf_theatre
+
+
+```

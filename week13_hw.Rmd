@@ -1,0 +1,243 @@
+```{r}
+# event <- data.frame(
+#   rank = 0,
+#   country = country,
+#   number = 0,
+#   x = 0,
+#   y = 0,
+#   angle = 0
+# )
+# event$level <- cut(event$number, seq(from=0,to=550,by=50))
+# 
+# for (angle in seq_along(event[[1]])) {
+#   eventNum <- length(event[[1]])
+#   event$x[[angle]] <- cos(angle/eventNum*(pi*2)+pi/2)
+#   event$y[[angle]] <- sin(angle/eventNum*(pi*2)+pi/2)
+#   event$angle[[angle]] <- angle/eventNum*(pi*2)+pi/2
+# }
+# View(event)
+  # geom_bar(
+  #   data = Top12ReasonTop10,
+  #   aes(
+  #     x = `原因`,
+  #     fill = `原因`
+  #   ),
+  #   color = "black",
+  #   size = 0.2,
+  #   width = 1
+  # )
+  # geom_point(
+  #   data = data.frame(
+  #     x = c(0, 10),
+  #     y = c(3000, 3000)
+  #   ),
+  #   aes(x = x, y = y),
+  #   color = "red"
+  # )
+  # geom_spoke(
+  #   data = topInfoRank,
+  #   aes(
+  #     x = 0,
+  #     y = 0,
+  #     angle = angle,
+  #     radius = 250#ifelse(rank%%2==0,400,300)
+  #   ),
+  #   size = 0.1
+  # ),
+  # geom_point(
+  #   data = topInfoRank,
+  #   aes(
+  #     x = x*250,#ifelse(rank%%2==0,400,300),
+  #     y = y*250,#ifelse(rank%%2==0,400,300),
+  #     size = number,
+  #     fill = level
+  #   ),
+  #   shape = 21
+  # )
+```
+
+```{r}
+#不符合食品資訊資料集
+#https://data.gov.tw/dataset/6133
+data8 <- readr::read_csv("https://data.fda.gov.tw/opendata/exportDataList.do?method=ExportData&InfoId=52&logType=2")
+library(lubridate)
+library(stringr)
+library(magrittr)
+options(scipen = 999)
+
+data8 |> dplyr::arrange(
+  `產地`
+) -> data8
+
+country <- unique(data8$產地)
+
+event <- data.frame(
+  rank = 0,
+  country = country,
+  number = 0
+)
+for (i in seq_along(event[[1]])) {
+  event$number[[i]] <- sum(data8$`產地`==event$country[[i]])
+}
+event %<>% dplyr::arrange(number)
+for (i in seq_along(event[[1]])) {
+  event$rank[[i]] <- i
+}
+event |> dplyr::filter(
+  rank > 60
+) -> eventTop12
+data8 |> 
+  dplyr::filter(
+    data8$`產地` %in% eventTop12$country
+  ) -> Top12Info
+View(Top12Info)
+
+
+Top12Info$`產地` |> 
+  factor(levels = topInfoRank$country
+    ) -> Top12Info$`產地`
+Top12Info$`原因` |> 
+  factor(levels = topInfoReason$reason
+    ) -> Top12Info$`原因`
+```
+
+```{r}
+topInfoReason <- data.frame(
+  reason = unique(data8$`原因`),
+  allNumber = 0,
+  top12Number = 0
+)
+
+for (i in seq_along(topInfoReason[[1]])) {
+  topInfoReason$allNumber[[i]] <- sum(
+    data8$`原因`==topInfoReason$reason[[i]]
+    )
+  topInfoReason$top12Number[[i]] <- sum(
+    Top12Info$`原因`==topInfoReason$reason[[i]]
+    )
+  
+}
+topInfoReason %<>% dplyr::arrange(top12Number)
+
+View(topInfoReason)
+Top12Info |> dplyr::filter(
+  `原因` %in% topInfoReason$reason[1:10]
+) -> Top12ReasonTop10
+data8 |> dplyr::filter(
+  `原因` %in% topInfoReason$reason[1:10]
+) -> reasonTop10
+#top5Reason <- topInfoReason$reason[1:4]
+reasonTop10$`原因` |> 
+  factor(levels = topInfoReason$reason
+    ) -> reasonTop10$`原因`
+Top12ReasonTop10$`原因` |> 
+  factor(levels = topInfoReason$reason
+    ) -> Top12ReasonTop10$`原因`
+```
+
+```{r}
+topInfoRank <- data.frame(
+  rank = 0,
+  country = unique(Top12Info$`產地`),
+  number = 0
+)
+
+for (i in seq_along(topInfoRank[[1]])) {
+  topInfoRank$number[[i]] <- sum(
+    Top12Info$`產地`==topInfoRank$country[[i]]
+    )
+  topInfoRank$rank[[i]] <- i
+}
+topInfoRank %<>% dplyr::arrange(desc(number))
+
+for (i in seq_along(topInfoRank[[1]])) {
+  topInfoRank$rank[[i]] <- i
+}
+
+topInfoRank |> 
+  dplyr::mutate(
+    level = cut(number, seq(from=0,to=550,by=50)),
+    x = cos(rank/length(rank)*(pi*2)+pi/2),
+    y = sin(rank/length(rank)*(pi*2)+pi/2),
+    angle = rank/length(rank)*(pi*2)+pi/2
+  ) -> topInfoRank
+
+View(topInfoRank)
+```
+
+
+```{r}
+pltFood <- Plot()
+pltFood$ggplot = ggplot()
+pltFood$geom = list(
+  geom_bar(
+    data = Top12Info,
+    aes(
+      x = `產地`,
+      fill = `原因`
+    )
+  ),
+  geom_point(
+    data = data.frame(
+      x = 0,
+      y = 700
+    ),
+    aes(x = x, y = y),
+    size = 0.1
+  ),
+  geom_text(
+    data = topInfoRank,
+    aes(
+      x = country,
+      y = number+10,
+      label = number
+    )
+  )
+)
+
+pltFood$scale = scale_fill_manual(
+  limits = rev(topInfoReason$reason[37:39]), 
+  values = c("#DD2C00", "#FF5722","#B2EBF2"),
+  na.value = "grey"
+)
+# pltFood$scale = list(
+#   scale_size(
+#     range = c(3,15)
+#   )
+# )
+
+pltFood$others = list(
+  scale_y_continuous(
+    name = "件數",
+    expand = c(0, 0)
+  )
+  # scale_x_discrete(
+  #   breaks = 
+  # )
+)
+
+pltFood$theme = list(
+  theme(
+    axis.title.y = element_text(angle = 0),
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(
+      angle = 30,
+      hjust = 0.7,
+      vjust = 1
+      ),
+    #axis.line.x = element_line(color="#666666"),
+    #axis.line.y = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.major.y = element_line(
+      color = "grey",
+      size = 0.1
+    )
+  )
+)
+
+
+pltFood$make() + coord_fixed(ratio = 1/60)
+#econDV2::ggdash()
+```
+

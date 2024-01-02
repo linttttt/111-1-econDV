@@ -1,0 +1,149 @@
+```{r}
+#remotes::install_github("tpemartin/econIDV")
+#install.packages("geojson")
+#install.packages("ggmap")
+```
+
+```{r}
+plt = Plot()
+plt$ggplot = ggplot(mpg, aes(y = class))
+plt$geom =  geom_bar(aes(fill = drv), position = position_stack(reverse = TRUE)) 
+plt$make()
+```
+
+```{r}
+plt$scale = scale_fill_brewer(
+  type = "qual",
+  palette = "Accent"
+)
+plt$make()
+```
+
+```{r}
+plt = econDV2::Plot()
+plt$ggplot = ggplot(
+  faithfuld,
+  aes(
+    waiting, eruptions, fill = density)
+  ) 
+plt$geom = geom_raster() 
+plt$others = list(
+  scale_x_continuous(NULL, expand = c(0, 0)),
+  scale_y_continuous(NULL, expand = c(0, 0)), 
+  theme(legend.position = "none")
+  )
+plt$make()
+```
+
+```{r}
+plt$scale = scale_fill_gradient(
+  low= "#fcc2ab",
+  high= "#c63c06"
+)
+plt$others[[3]] <- NULL
+
+plt$make()
+```
+
+```{r}
+examples=econIDV::Examples()
+examples$election()
+examples$election_env$attach()
+```
+
+```{r}
+download_electionData()
+# prepare choropleth map data
+elections |>
+  prepare_choroplethMapData() -> df_elections
+df_elections |>
+  prepare_fillColorByYears_data() -> df_elections_wider
+
+# prepare datatable data
+df_elections |>
+  prepare_dataTableData() -> df_4dataTable_wide
+
+library(ggmap)
+df_elections_wider |>
+  as.data.frame() |> # to remove tibble class for row.names assignment
+  create_sf() |>
+  # 移除geometry空的資料, 否則ggplotly會有錯誤
+  econIDV::remove_emptyGeometry() ->
+  sf_elections_wider
+
+View(df_elections)
+View(sf_elections_wider)
+```
+
+```{r}
+mp = econDV2::Map()
+plt2 = econDV2::Plot()
+sf_taiwan_simplified = mp$sf$get_sf_taiwan_simplified()
+plt2$ggplot = ggplot(data = sf_taiwan_simplified$台灣本島$縣市)
+plt2$geom = geom_sf()
+plt2$theme = theme_void()
+plt2$make()
+```
+
+
+```{r}
+df_elections |> 
+  mutate(
+    取色得票率 = dplyr::if_else(
+      取色得票率>0,
+      取色得票率-50, 取色得票率+50
+    )
+  ) -> df_elections
+View(df_elections)
+range(df_elections$取色得票率)
+
+df_elections |> 
+  mutate(
+    取色得票率=scales::rescale(
+      取色得票率, from=c(-50, 50), to=c(-1, 1)
+      )
+    ) -> df_elections
+View(df_elections)
+range(df_elections$取色得票率)
+```
+
+```{r}
+plt3 = econDV2::Plot()
+plt3$ggplot = ggplot(
+  data = df_elections |>
+    dplyr::filter(年==2012)
+  )
+plt3$geom = geom_col(
+  aes(
+    x = `地區`,
+    y = `取色得票率`,
+    fill = `取色得票率`
+  )
+)
+
+plt3$scale = list(
+  scale_fill_gradient2(
+    high = "#009a00", #國民 +
+    mid = "white",
+    low = "#0000aa", #民進 -
+    midpoint = 0,
+    labels = function(x) scales::rescale(
+      x, to=c(-50, 50), from=c(-1, 1)
+      )
+    ),
+  scale_y_continuous(
+    labels = function(x) scales::rescale(
+      x, to=c(-50, 50), from=c(-1, 1)
+      )
+    )
+  )
+
+
+
+plt3$make()
+```
+
+```{r}
+colorspace::choose_palette(gui = "shiny")
+```
+

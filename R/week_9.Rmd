@@ -1,0 +1,152 @@
+```{r}
+source(".Rprofile") # No need if you run in RStudio
+Sys.setenv(CLIPR_ALLOW=TRUE) # if you use shiny app in Colab
+```
+
+# Color
+
+# \* Hue (色像）
+
+# \* Chroma（彩度）
+
+# \* Luminance（流明）
+
+# Qualitative
+```{r}
+plt = Plot()
+plt$ggplot = ggplot(mpg, aes(y = class))
+plt$geom = geom_bar(
+  aes(fill = drv),
+  position = position_stack(reverse = TRUE)
+  ) 
+plt$make()
+View(mpg)
+```
+
+```{r}
+plt$geom =geom_bar(
+  aes(fill = drv),
+  position = position_stack()
+  )
+plt$make()
+
+# check data limits
+mpg$drv |> unique()
+```
+
+#Map limits to values
+```{r}
+plt$scale = scale_fill_manual(
+   limits = c("f", "4", "r"),
+   values = c("#ED90A4", "#7EBA68", "#6FB1E7")
+)
+
+scales::show_col(c("#ED90A4", "#7EBA68", "#6FB1E7"))
+plt$make()
+```
+
+#limits also determine order
+```{r}
+plt$scale = scale_fill_manual(
+   limits = c("r", "f", "4"), 
+   values = c("#ED90A4", "#7EBA68", "#6FB1E7")
+)
+
+plt$make()
+```
+
+#Outside limits is considered NA
+```{r}
+plt$scale = scale_fill_manual(
+   limits = c("r", "f"), 
+   values = c("#ED90A4", "#7EBA68")
+)
+plt$make()
+```
+
+```{r}
+plt$scale = scale_fill_manual(
+   limits = c("r", "f"), 
+   values = c("#ED90A4", "#7EBA68"),
+   na.value = "transparent" # decides na.values
+)
+plt$make()
+```
+
+#Lengend: name, breaks, labels
+```{r}
+plt$scale = list(
+  scale_fill_manual(
+    limits = c("r", "f"),
+    values = c("#ED90A4", "#7EBA68"),
+    na.value = "transparent",
+    breaks = c("r", "f"),
+    labels = c("休旅車","四輪驅動"),
+    name = "車種"
+    ),
+  scale_y_discrete(
+    limits = c("subcompact", "suv"), 
+    labels = c("中型", "SUV"),
+    name = "車型"
+    )
+  )
+
+
+plt$make()
+```
+
+#Final makeup
+```{r}
+plt$others = list(
+  scale_x_continuous(
+    sec.axis = dup_axis(),
+    expand=c(0, 0)
+  )
+)
+
+mk = econDV2::Makeup()
+plt$theme = list(
+  mk$theme(),
+  theme(
+    panel.grid.major.y= element_blank(),
+    panel.grid.major.x=element_line(color="grey"),
+    legend.position = "top",
+    axis.title.y=element_text(angle = 0)
+  )
+)
+
+plt$explain = list(
+  labs(
+    title="不同車型/車種數量",
+    subtitle="去除部份車型/車種",
+    caption="資料來源：",
+    tag="圖1"
+  ),
+  xlab(NULL)
+)
+plt$make()
+```
+
+```{r}
+plt$make()+
+  theme(
+  plot.title=element_text(size = 10 #input$title
+   ),
+  plot.subtitle = element_text(size= 10 #input$subtitle
+   ),
+  plot.caption = element_text(size=10 #input$caption
+   )
+  )
+```
+
+```{r}
+econDV2::ggdash()
+```
+
+
+```{r}
+plt$scale = scale_fill_brewer(
+  type = "qual",
+  palette = "Accent"
+)
+plt$make()
